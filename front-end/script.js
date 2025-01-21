@@ -1,41 +1,24 @@
 // script.js
+async function fetchViews(retries = 3) {
+    const viewsElement = document.getElementById('views');
+    viewsElement.textContent = 'Loading...';
 
-document.addEventListener('DOMContentLoaded', () => {
-    const apiURL = "https://x2zig37o7qcuvy4gujqyvm7e6q0eohqg.lambda-url.ap-southeast-1.on.aws/"; // Replace with your API URL
-    const projectsContainer = document.getElementById('projects-container');
-    const viewerCountElement = document.getElementById('viewer-count');
+    try {
+        const response = await fetch('https://x2zig37o7qcuvy4gujqyvm7e6q0eohqg.lambda-url.ap-southeast-1.on.aws/');
+        if (!response.ok) {
+            throw new Error(`Network response was not ok: ${response.statusText}`);
+        }
+        const data = await response.json();
+        viewsElement.textContent = data.views;
+    } catch (error) {
+        console.error('Error fetching views:', error);
+        if (retries > 0) {
+            console.log(`Retrying... (${retries} attempts left)`);
+            setTimeout(() => fetchViews(retries - 1), 1000);
+        } else {
+            viewsElement.textContent = 'Error fetching views';
+        }
+    }
+}
 
-    // Fetch and display project data
-    fetch(apiURL)
-        .then(response => {
-            if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status}`);
-            }
-            return response.json();
-        })
-        .then(data => {
-            projectsContainer.innerHTML = '';
-            data.projects.forEach(project => {
-                const projectDiv = document.createElement('div');
-                projectDiv.classList.add('project');
-                projectDiv.innerHTML = `
-                    <h3>${project.name}</h3>
-                    <p>${project.description}</p>
-                    <a href="${project.link}" target="_blank">View Project</a>
-                `;
-                projectsContainer.appendChild(projectDiv);
-            });
-        })
-        .catch(error => {
-            projectsContainer.innerHTML = '<p>Failed to load projects. Please try again later.</p>';
-            console.error('Error fetching projects:', error);
-        });
-
-    // Website Viewer Counter (simulating with localStorage for demo purposes)
-    const viewerCountKey = 'portfolioViewerCount';
-    let viewerCount = localStorage.getItem(viewerCountKey) || 0;
-    viewerCount++;
-    localStorage.setItem(viewerCountKey, viewerCount);
-
-    viewerCountElement.textContent = `Website Views: ${viewerCount}`;
-});
+document.addEventListener('DOMContentLoaded', fetchViews);
